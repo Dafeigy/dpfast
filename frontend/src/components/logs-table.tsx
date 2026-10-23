@@ -1,4 +1,6 @@
 import * as React from "react"
+import { CheckIcon, CopyIcon } from "lucide-react"
+import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -21,12 +23,14 @@ import {
 } from "@/components/ui/table"
 import type { LogItem, LogPage } from "@/lib/types"
 
-function levelVariant(
-  level: string
-): "default" | "secondary" | "destructive" | "outline" {
-  if (level === "ERROR") return "destructive"
-  if (level === "WARNING") return "secondary"
-  return "outline"
+function levelClassName(level: string) {
+  if (level === "ERROR") {
+    return "border-red-200 bg-red-50 text-red-700 dark:border-red-900/50 dark:bg-red-950/40 dark:text-red-300"
+  }
+  if (level === "WARNING") {
+    return "border-yellow-200 bg-yellow-50 text-yellow-700 dark:border-yellow-900/50 dark:bg-yellow-950/40 dark:text-yellow-300"
+  }
+  return "border-green-200 bg-green-50 text-green-700 dark:border-green-900/50 dark:bg-green-950/40 dark:text-green-300"
 }
 
 function displayBody(value: string | null) {
@@ -38,14 +42,43 @@ function displayBody(value: string | null) {
   }
 }
 
+function detailText(value: unknown) {
+  if (typeof value === "string" || value === null) return displayBody(value)
+  return JSON.stringify(value, null, 2)
+}
+
 function DetailBlock({ title, value }: { title: string; value: unknown }) {
+  const [copied, setCopied] = React.useState(false)
+  const text = detailText(value)
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(text)
+      setCopied(true)
+      toast.success("已复制")
+      window.setTimeout(() => setCopied(false), 1500)
+    } catch {
+      toast.error("复制失败")
+    }
+  }
+
   return (
     <section className="space-y-2">
-      <h3 className="text-sm font-medium">{title}</h3>
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="text-sm font-medium">{title}</h3>
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon-xs"
+          aria-label={`复制${title}`}
+          title={`复制${title}`}
+          onClick={copy}
+        >
+          {copied ? <CheckIcon /> : <CopyIcon />}
+        </Button>
+      </div>
       <pre className="max-h-72 overflow-auto rounded-md bg-muted p-3 text-xs leading-5 break-all whitespace-pre-wrap">
-        {typeof value === "string" || value === null
-          ? displayBody(value)
-          : JSON.stringify(value, null, 2)}
+        {text}
       </pre>
     </section>
   )
@@ -54,11 +87,15 @@ function DetailBlock({ title, value }: { title: string; value: unknown }) {
 export function LogsTable({
   data,
   loading,
+  hasLoaded,
+  newItemIds,
   page,
   onPageChange,
 }: {
   data: LogPage
   loading: boolean
+  hasLoaded: boolean
+  newItemIds: string[]
   page: number
   onPageChange: (page: number) => void
 }) {
@@ -66,7 +103,10 @@ export function LogsTable({
 
   return (
     <>
-      <div className="overflow-hidden rounded-lg border bg-background">
+      <div
+        className="relative overflow-hidden rounded-lg border bg-background"
+        aria-busy={loading}
+      >
         <Table>
           <TableHeader className="bg-muted/50">
             <TableRow>
@@ -79,7 +119,7 @@ export function LogsTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {loading ? (
+            {!hasLoaded ? (
               Array.from({ length: 6 }).map((_, index) => (
                 <TableRow key={index}>
                   <TableCell colSpan={6}>
@@ -92,7 +132,11 @@ export function LogsTable({
                 <TableRow
                   key={item.id}
                   tabIndex={0}
-                  className="cursor-pointer"
+                  className={`cursor-pointer ${
+                    newItemIds.includes(item.id)
+                      ? "animate-in duration-300 fade-in-0 slide-in-from-top-2"
+                      : ""
+                  }`}
                   onClick={() => setSelected(item)}
                   onKeyDown={(event) => {
                     if (event.key === "Enter" || event.key === " ")
@@ -106,7 +150,10 @@ export function LogsTable({
                     }).format(new Date(item.created_at))}
                   </TableCell>
                   <TableCell>
-                    <Badge variant={levelVariant(item.level)}>
+                    <Badge
+                      variant="outline"
+                      className={levelClassName(item.level)}
+                    >
                       {item.level}
                     </Badge>
                   </TableCell>

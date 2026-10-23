@@ -1,5 +1,7 @@
 import {
   BookOpenIcon,
+  ChevronLeftIcon,
+  ChevronRightIcon,
   LogOutIcon,
   ScrollTextIcon,
   TerminalSquareIcon,
@@ -18,24 +20,45 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarRail,
+  SidebarTrigger,
+  useSidebar,
 } from "@/components/ui/sidebar"
 
 export function AppSidebar({ onLogout }: { onLogout: () => void }) {
+  const { state } = useSidebar()
+
   return (
     <Sidebar collapsible="icon" variant="inset">
       <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            <SidebarMenuButton size="lg" tooltip="日志控制台" asChild>
-              <a href="/">
-                <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <TerminalSquareIcon className="size-4" />
-                </span>
-                <span className="font-medium">日志控制台</span>
-              </a>
-            </SidebarMenuButton>
-          </SidebarMenuItem>
-        </SidebarMenu>
+        <div className="flex items-center gap-1">
+          {state === "collapsed" ? (
+            <SidebarTrigger
+              className="size-8 bg-primary text-primary-foreground hover:bg-primary/80 hover:text-primary-foreground"
+              aria-label="展开侧边栏"
+              title="展开侧边栏"
+            >
+              <ChevronRightIcon />
+            </SidebarTrigger>
+          ) : (
+            <>
+              <SidebarMenu className="min-w-0 flex-1">
+                <SidebarMenuItem>
+                  <SidebarMenuButton size="lg" tooltip="日志控制台" asChild>
+                    <a href="/">
+                      <span className="flex size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
+                        <TerminalSquareIcon className="size-4" />
+                      </span>
+                      <span className="font-medium">日志控制台</span>
+                    </a>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+              <SidebarTrigger aria-label="收起侧边栏" title="收起侧边栏">
+                <ChevronLeftIcon />
+              </SidebarTrigger>
+            </>
+          )}
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

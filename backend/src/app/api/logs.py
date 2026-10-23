@@ -1,7 +1,7 @@
 import math
 import uuid
 from datetime import datetime
-from typing import Annotated
+from typing import Annotated, Literal
 
 from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import func, or_, select
@@ -24,6 +24,8 @@ async def list_logs(
     level: str | None = None,
     method: str | None = None,
     path: str | None = None,
+    error_code: int | None = Query(None, ge=100, le=599),
+    status: Literal["success", "failure"] | None = None,
     status_code: int | None = Query(None, ge=100, le=599),
     request_id: str | None = None,
     search: str | None = Query(None, max_length=200),
@@ -36,9 +38,15 @@ async def list_logs(
     if method:
         filters.append(ApiLog.method == method.upper())
     if path:
-        filters.append(ApiLog.path.ilike(f"%{path}%"))
-    if status_code:
+        filters.append(ApiLog.path == path)
+    if error_code:
+        filters.append(ApiLog.status_code == error_code)
+    elif status_code:
         filters.append(ApiLog.status_code == status_code)
+    if status == "success":
+        filters.append(ApiLog.status_code == 200)
+    elif status == "failure":
+        filters.append(ApiLog.status_code != 200)
     if request_id:
         filters.append(ApiLog.request_id == request_id)
     if created_from:

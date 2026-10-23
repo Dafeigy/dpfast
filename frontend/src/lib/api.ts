@@ -33,6 +33,11 @@ export const api = {
     search: string
     level: string
     method: string
+    path: string
+    errorCode: string
+    status: string
+    dateFrom: string
+    dateTo: string
   }) {
     const params = new URLSearchParams({
       page: String(filters.page),
@@ -41,6 +46,11 @@ export const api = {
     if (filters.search) params.set("search", filters.search)
     if (filters.level !== "all") params.set("level", filters.level)
     if (filters.method !== "all") params.set("method", filters.method)
+    if (filters.path !== "all") params.set("path", filters.path)
+    if (filters.errorCode) params.set("error_code", filters.errorCode)
+    if (filters.status !== "all") params.set("status", filters.status)
+    if (filters.dateFrom) params.set("created_from", `${filters.dateFrom}T00:00:00`)
+    if (filters.dateTo) params.set("created_to", `${filters.dateTo}T23:59:59.999999`)
     return request<LogPage>(`/api/v1/logs?${params}`)
   },
 }
